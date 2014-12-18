@@ -178,7 +178,7 @@ signed char coltype, filtype, bitdepth;
 
 	//.PNG specific variables:
 static int bakr = 0x80, bakg = 0x80, bakb = 0x80; //this used to be public...
-static int gslidew = 0, gslider = 0, xm, xmn[4], xr0, xr1, xplc, yplc;
+static int gslidew = 0, gslider = 0, xm, xmn[4], xr_0, xr_1, xplc, yplc;
 static INT_PTR nfplace;
 static int clen[320], cclen[19], bitpos, filt, xsiz, ysiz;
 static int xsizbpl, ixsiz, ixoff, iyoff, ixstp, iystp, intlac, nbpl, trnsrgb ASMNAME("trnsrgb");
@@ -549,24 +549,24 @@ static int initpass () //Interlaced images have 7 "passes", non-interlaced have 
 
 		//Precalculate x-clipping to screen borders (speeds up putbuf)
 		//Equation: (0 <= xr <= ixsiz) && (0 <= xr*ixstp+globxoffs+ixoff <= xres)
-	xr0 = max((-globxoffs-ixoff+(1<<j)-1)>>j,0);
-	xr1 = min((xres-globxoffs-ixoff+(1<<j)-1)>>j,ixsiz);
-	xr0 = ixsiz-xr0;
-	xr1 = ixsiz-xr1;
+	xr_0 = max((-globxoffs-ixoff+(1<<j)-1)>>j,0);
+	xr_1 = min((xres-globxoffs-ixoff+(1<<j)-1)>>j,ixsiz);
+	xr_0 = ixsiz-xr_0;
+	xr_1 = ixsiz-xr_1;
 
-		  if (coltype == 4) { xr0 = xr0*2;   xr1 = xr1*2;   }
-	else if (coltype == 2) { xr0 = xr0*3-2; xr1 = xr1*3-2; }
-	else if (coltype == 6) { xr0 = xr0*4-2; xr1 = xr1*4-2; }
+		  if (coltype == 4) { xr_0 = xr_0*2;   xr_1 = xr_1*2;   }
+	else if (coltype == 2) { xr_0 = xr_0*3-2; xr_1 = xr_1*3-2; }
+	else if (coltype == 6) { xr_0 = xr_0*4-2; xr_1 = xr_1*4-2; }
 	else
 	{
 		switch(bitdepth)
 		{
-			case 1: xr0 += ((-ixsiz)&7)+7;
-					  xr1 += ((-ixsiz)&7)+7; break;
-			case 2: xr0 = ((xr0+((-ixsiz)&3)+3)<<1);
-					  xr1 = ((xr1+((-ixsiz)&3)+3)<<1); break;
-			case 4: xr0 = ((xr0+((-ixsiz)&1)+1)<<2);
-					  xr1 = ((xr1+((-ixsiz)&1)+1)<<2); break;
+			case 1: xr_0 += ((-ixsiz)&7)+7;
+					  xr_1 += ((-ixsiz)&7)+7; break;
+			case 2: xr_0 = ((xr_0+((-ixsiz)&3)+3)<<1);
+					  xr_1 = ((xr_1+((-ixsiz)&3)+3)<<1); break;
+			case 4: xr_0 = ((xr_0+((-ixsiz)&1)+1)<<2);
+					  xr_1 = ((xr_1+((-ixsiz)&1)+1)<<2); break;
 		}
 	}
 	ixstp <<= 2;
@@ -871,14 +871,14 @@ static void putbuf (const unsigned char *buf, int leng)
 			//Draw line!
 		if ((unsigned int)yplc < (unsigned int)yres)
 		{
-			x = xr0; p = nfplace;
+			x = xr_0; p = nfplace;
 			switch (coltype)
 			{
 				case 2:
-					rgbhlineasm(x,xr1,p,ixstp);
+					rgbhlineasm(x,xr_1,p,ixstp);
 					break;
 				case 4:
-					for(;x>xr1;p+=ixstp,x-=2)
+					for(;x>xr_1;p+=ixstp,x-=2)
 					{
 #if (PROCESSALPHAHERE == 1)
 							//Enable this code to process alpha right here!
@@ -893,7 +893,7 @@ static void putbuf (const unsigned char *buf, int leng)
 					}
 					break;
 				case 6:
-					for(;x>xr1;p+=ixstp,x-=4)
+					for(;x>xr_1;p+=ixstp,x-=4)
 					{
 #if (PROCESSALPHAHERE == 1)
 							//Enable this code to process alpha right here!
@@ -914,10 +914,10 @@ static void putbuf (const unsigned char *buf, int leng)
 				default:
 					switch(bitdepth)
 					{
-						case 1: for(;x>xr1;p+=ixstp,x-- ) *(int *)p = palcol[olinbuf[x>>3]>>(x&7)]; break;
-						case 2: for(;x>xr1;p+=ixstp,x-=2) *(int *)p = palcol[olinbuf[x>>3]>>(x&6)]; break;
-						case 4: for(;x>xr1;p+=ixstp,x-=4) *(int *)p = palcol[olinbuf[x>>3]>>(x&4)]; break;
-						case 8: pal8hlineasm(x,xr1,p,ixstp); break; //for(;x>xr1;p+=ixstp,x--) *(int *)p = palcol[olinbuf[x]]; break;
+						case 1: for(;x>xr_1;p+=ixstp,x-- ) *(int *)p = palcol[olinbuf[x>>3]>>(x&7)]; break;
+						case 2: for(;x>xr_1;p+=ixstp,x-=2) *(int *)p = palcol[olinbuf[x>>3]>>(x&6)]; break;
+						case 4: for(;x>xr_1;p+=ixstp,x-=4) *(int *)p = palcol[olinbuf[x>>3]>>(x&4)]; break;
+						case 8: pal8hlineasm(x,xr_1,p,ixstp); break; //for(;x>xr1;p+=ixstp,x--) *(int *)p = palcol[olinbuf[x]]; break;
 					}
 					break;
 			}
@@ -2163,23 +2163,23 @@ static int ktgarend (const char *header, int fleng,
 //==============================  TARGA ends =================================
 //==============================  BMP begins =================================
 	//TODO: handle BI_RLE8 and BI_RLE4 (compression types 1&2 respectively)
-	//                        ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//                        ³  0(2): "BM"   ³
-	// ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿³ 10(4): rastoff³ ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	// ³headsiz=12 (OS/2 1.x)³³ 14(4): headsiz³ ³ All new formats: ³
-	//ÚÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÁÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÁÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-	//³ 18(2): xsiz                         ³ 18(4): xsiz                                  ³
-	//³ 20(2): ysiz                         ³ 22(4): ysiz                                  ³
-	//³ 22(2): planes (always 1)            ³ 26(2): planes (always 1)                     ³
-	//³ 24(2): cdim (1,4,8,24)              ³ 28(2): cdim (1,4,8,16,24,32)                 ³
-	//³ if (cdim < 16)                      ³ 30(4): compression (0,1,2,3!?,4)             ³
-	//³    26(rastoff-14-headsiz): pal(bgr) ³ 34(4): (bitmap data size+3)&3                ³
-	//³                                     ³ 46(4): N colors (0=2^cdim)                   ³
-	//³                                     ³ if (cdim < 16)                               ³
-	//³                                     ³    14+headsiz(rastoff-14-headsiz): pal(bgr0) ³
-	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	//                      ³ rastoff(?): bitmap data ³
-	//                      ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	//                        ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿
+	//                        ï¿½  0(2): "BM"   ï¿½
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ 10(4): rastoffï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿
+	// ï¿½headsiz=12 (OS/2 1.x)ï¿½ï¿½ 14(4): headsizï¿½ ï¿½ All new formats: ï¿½
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿
+	//ï¿½ 18(2): xsiz                         ï¿½ 18(4): xsiz                                  ï¿½
+	//ï¿½ 20(2): ysiz                         ï¿½ 22(4): ysiz                                  ï¿½
+	//ï¿½ 22(2): planes (always 1)            ï¿½ 26(2): planes (always 1)                     ï¿½
+	//ï¿½ 24(2): cdim (1,4,8,24)              ï¿½ 28(2): cdim (1,4,8,16,24,32)                 ï¿½
+	//ï¿½ if (cdim < 16)                      ï¿½ 30(4): compression (0,1,2,3!?,4)             ï¿½
+	//ï¿½    26(rastoff-14-headsiz): pal(bgr) ï¿½ 34(4): (bitmap data size+3)&3                ï¿½
+	//ï¿½                                     ï¿½ 46(4): N colors (0=2^cdim)                   ï¿½
+	//ï¿½                                     ï¿½ if (cdim < 16)                               ï¿½
+	//ï¿½                                     ï¿½    14+headsiz(rastoff-14-headsiz): pal(bgr0) ï¿½
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	//                      ï¿½ rastoff(?): bitmap data ï¿½
+	//                      ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 static int kbmprend (const char *buf, int fleng,
 	INT_PTR daframeplace, int dabytesperline, int daxres, int dayres,
 	int daglobxoffs, int daglobyoffs)
