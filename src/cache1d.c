@@ -252,7 +252,7 @@ typedef struct _searchpath {
 } searchpath_t;
 static searchpath_t *searchpathhead = NULL;
 static size_t maxsearchpathlen = 0;
-int pathsearchmode = 0;
+int pathsearchmode = 1;
 
 int addsearchpath(const char *p)
 {
