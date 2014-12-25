@@ -452,6 +452,7 @@ int initmouse(void)
 {
 	moustat=1;
 	grabmouse(1);
+	SDL_ShowCursor(0); /* force mouse cursor off */
 	return 0;
 }
 
